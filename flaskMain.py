@@ -141,7 +141,8 @@ def data():
             Haros.columns.Email.like(f'%{search}%'),
             Haros.columns.MediaOutlet.like(f'%{search}%'),
             Haros.columns.Name.like(f'%{search}%'),
-            Haros.columns.Requirements.like(f'%{search}%')
+            Haros.columns.Requirements.like(f'%{search}%'),
+            Haros.columns.LinkedIn.like(f'%{search}%')
         ))
 
     total_filtered = query.count()
