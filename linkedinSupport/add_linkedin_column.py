@@ -142,9 +142,9 @@ class LinkedinAdder():
             print(df)
 
         if len(df) > 100:
-            df['linkedin url'] = df.apply(lambda row : self.__get_haro_url(row, True), axis=1)
+            df['LinkedIn'] = df.apply(lambda row : self.__get_haro_url(row, True), axis=1)
         else:
-            df['linkedin url'] = df.apply(lambda row : self.__get_haro_url(row, False), axis=1)
+            df['LinkedIn'] = df.apply(lambda row : self.__get_haro_url(row, False), axis=1)
 
         if self.debug:
             print("\nAFTER ADD")
