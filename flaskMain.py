@@ -22,6 +22,7 @@ from ev_20 import emailAPIvalid
 from flask_app import emailRep
 from flask_app.googleAuth import g_oauth, authCheck
 from haroListener.haro_listener import HaroListener
+from linkedinSupport.add_linkedin_column import LinkedinAdder
 
 
 ###################### Flask ######################
@@ -65,6 +66,21 @@ class uploadEmailFilesForm(FlaskForm):
 
 ###################### Functions ######################
 
+
+def add_linkedin_data():
+    """
+    adds linkedin urls for everyone on the haro database
+    """
+    
+    haros = pd.read_sql_table(table_name='haros', con=db.engine)
+    with open("linkedinSupport/config/email.txt") as em, open("linkedinSupport/config/password.txt") as pw:
+        email = em.read()
+        password = pw.read()
+    adder = LinkedinAdder(email, password)
+    new_h = adder.add_column_haro(haros)
+    new_h.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
+
+
 def removeDBdups():
     """
     removes duplicates from SQLite DB, does not need to be run often, as the addDBData function now checks for duplicates
@@ -92,18 +108,20 @@ def addDBData(df : pd.DataFrame):
     except Exception:
         pass
 
-    
+    with open("linkedinSupport/config/email.txt") as em, open("linkedinSupport/config/password.txt") as pw:
+        email = em.read()
+        password = pw.read()
+    adder = LinkedinAdder(email, password)
+    with_linked = adder.add_column_haro(df)
     whole_db = pd.read_sql_table('haros', db.engine)
-    whole_db.append(df)
-    whole_db.drop_duplicates(subset=['Summary'], inplace=True)
-    
-
+    res = pd.concat(objs=[whole_db, with_linked])
+    res.drop_duplicates(subset=['Summary'], inplace=True)
     # Load data to database
-    whole_db.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
+    res.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
 
 def listener_bg_process():
     """
-    A function for celery to use to create a background process to listen for haro emails
+    A function for service to use to create a background process to listen for haro emails
     """
     listener = HaroListener('george@lightyearstrategies.com', False)
     listener.listen(addDBData)
