@@ -106,18 +106,19 @@ def addDBData(df : pd.DataFrame):
         df.drop('Unnamed:0', axis=1, inplace=True)
         
     except Exception:
-        pass
+        print("no unnamed column")
 
-    with open("linkedinSupport/config/email.txt") as em, open("linkedinSupport/config/password.txt") as pw:
-        email = em.read()
-        password = pw.read()
-    adder = LinkedinAdder(email, password)
-    with_linked = adder.add_column_haro(df)
-    whole_db = pd.read_sql_table('haros', db.engine)
-    res = pd.concat(objs=[whole_db, with_linked])
-    res.drop_duplicates(subset=['Summary'], inplace=True)
-    # Load data to database
-    res.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
+    finally:
+        with open("linkedinSupport/config/email.txt") as em, open("linkedinSupport/config/password.txt") as pw:
+            email = em.read()
+            password = pw.read()
+        adder = LinkedinAdder(email, password)
+        with_linked = adder.add_column_haro(df)
+        whole_db = pd.read_sql_table('haros', db.engine)
+        res = pd.concat(objs=[whole_db, with_linked])
+        res.drop_duplicates(subset=['Summary'], inplace=True)
+        # Load data to database
+        res.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
 
 def listener_bg_process():
     """
