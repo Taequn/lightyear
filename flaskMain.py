@@ -67,20 +67,6 @@ class uploadEmailFilesForm(FlaskForm):
 ###################### Functions ######################
 
 
-def add_linkedin_data():
-    """
-    adds linkedin urls for everyone on the haro database
-    """
-    
-    haros = pd.read_sql_table(table_name='haros', con=db.engine)
-    with open("linkedinSupport/config/email.txt") as em, open("linkedinSupport/config/password.txt") as pw:
-        email = em.read()
-        password = pw.read()
-    adder = LinkedinAdder(email, password)
-    new_h = adder.add_column_haro(haros)
-    new_h.to_sql(name='haros', con=db.engine, index=False, if_exists='replace')
-
-
 def removeDBdups():
     """
     removes duplicates from SQLite DB, does not need to be run often, as the addDBData function now checks for duplicates
