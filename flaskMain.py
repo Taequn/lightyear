@@ -3,13 +3,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_bootstrap import Bootstrap
 from werkzeug.utils import secure_filename
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, MultipleFileField, RadioField
-from wtforms.validators import DataRequired, Email, InputRequired
-from flask_wtf.file import FileField, FileAllowed
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeSerializer, BadData
-
 import pandas as pd
 import os
 import sys
@@ -17,8 +12,10 @@ import time
 import traceback
 from datetime import datetime, timedelta, date
 
-from flask_app.config import *
-from flask_app.utils import *  #imports Celery, timethis
+import flask_app.config as config
+from flask_app.utils import make_celery  #imports Celery, timethis
+
+from flask_app.forms import uploadEmailFilesForm, uploadJournalistCSV
 
 from ev_20 import emailAPIvalid
 from flask_app import emailRep
@@ -30,52 +27,32 @@ from weeklyWriters.emailWeeklyRep import report
 
 ###################### Flask ######################
 
-app = Flask(__name__,template_folder=os.path.join(FLASK_DIR, 'HTML'))
+app = Flask(__name__,template_folder=os.path.join(config.FLASK_DIR, 'HTML'))
 app.register_blueprint(g_oauth)
 
-app.secret_key = FLASK_SECRET_KEY #used in upload forms ?
+app.secret_key = config.FLASK_SECRET_KEY #used in upload forms ?
 
-os.makedirs(UPLOAD_DIR,exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
+os.makedirs(config.UPLOAD_DIR,exist_ok=True)
+app.config['UPLOAD_FOLDER'] = config.UPLOAD_DIR
 
 from kombu.utils.url import quote
 app.config['CELERY_BROKER_URL'] = \
     'sqs://{AWS_ACCESS_KEY_ID}:{AWS_SECRET_ACCESS_KEY}@sqs.ca-central-1.amazonaws.com/453725380860/FlaskAppSQS-1'.format(
-                                    AWS_ACCESS_KEY_ID=quote(AWS_ACCESS_KEY_ID, safe=''),
-                                    AWS_SECRET_ACCESS_KEY=quote(AWS_SECRET_ACCESS_KEY, safe='')
+                                    AWS_ACCESS_KEY_ID=quote(config.AWS_ACCESS_KEY_ID, safe=''),
+                                    AWS_SECRET_ACCESS_KEY=quote(config.AWS_SECRET_ACCESS_KEY, safe='')
                                    )
 app.config['BROKER_TRANSPORT_OPTIONS'] = {"region": "ca-central-1"}
 
 # To work with Celery in local environment using RabbitMQ, uncomment app.config below and comment our the two above
 #app.config['CELERY_BROKER_URL'] = 'amqp://guest:guest@localhost:5672/'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(FLASK_DIR, 'HarosDB.sqlite3')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(config.FLASK_DIR, 'HarosDB.sqlite3')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 celery = make_celery(app)
 bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
 db.create_all()
-
-###################### Classes ######################
-
-class uploadEmailFilesForm(FlaskForm):
-    """Constructor for the Email Verification Form"""
-
-    email = StringField('What is your email?', validators=[DataRequired(), Email()])
-    files = MultipleFileField('Select your files',
-                              validators=[DataRequired(), FileAllowed(["csv", "xlsx"], "Only CSV or XLSX files are allowed")])
-    submit = SubmitField('Submit')
-
-class uploadJournalistCSV(FlaskForm):
-    """Constructor for the Journalist Subscription Form"""
-
-    personname = StringField('What is your full name?', validators=[DataRequired()])
-    email = StringField('What is your email?', validators=[DataRequired(), Email()])
-    frequency = RadioField(label='Receive updates every', validators=[InputRequired()], choices = [('_day', 'day'), ('_week', 'week'), ('_month', 'month')])
-    files = MultipleFileField('Select your files',
-                              validators=[DataRequired(), FileAllowed(["csv", "xlsx"], "Only CSV or XLSX files are allowed")])
-    submit = SubmitField('Submit')
 
 
 ###################### Functions ######################
@@ -454,9 +431,6 @@ def page_not_found(e):
     return render_template('error.html'), 404
 
 if __name__ == '__main__':
-    #addDBData("/Users/rutkovskii/lightyear/haroListener/haro_csvs/ALL_OLD_HAROS.csv")
-    #removeDBdups()
-
-    app.run(host='0.0.0.0', port=80,debug=True,threaded=True)
+    app.run(host='0.0.0.0', port=80,debug=False,threaded=True)
 
 
