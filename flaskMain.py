@@ -120,6 +120,7 @@ def send_pdf_report(df_for_email, email, subject, clientname):
     unsub = URLSafeSerializer(app.secret_key, salt='unsubscribe')
     token_string = f'{email} {subject}'
     token = unsub.dumps(token_string)
+    # TODO: fix this :)
     app.config['SERVER_NAME'] = '10.1.10.28:80'
     with app.app_context():
         url = url_for('unsubscribe', token=token, _external=True)
