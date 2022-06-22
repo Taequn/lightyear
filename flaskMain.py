@@ -121,7 +121,6 @@ def send_pdf_report(df_for_email, email, subject, clientname):
     token_string = f'{email} {subject}'
     token = unsub.dumps(token_string)
     # TODO: fix this :)
-    app.config['SERVER_NAME'] = '10.1.10.28:80'
     with app.app_context():
         url = url_for('unsubscribe', token=token, _external=True)
     pdf_maker_for_email = pdfReport(df_for_email, unsub_link=url)
